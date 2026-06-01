@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_adm.css') }}">
+</head>
+<body>
+<body>
+<div class="admin-container">        
+    <div class="admin-header">
+        <h1>Painel de Categorias - ADM </h1>
+            <button class="adm-btn adm-btn-add" onclick="abrirModalFormulario('incluir')">
+                + Incluir Nova Categoria
+            </button>
+    </div>
+<table class="adm-table">
+    <thead>
+        <tr>
+        <th>ID</th>
+        <th>Miniatura</th>
+        <th>Nome</th>
+        <th>Tipo / Integração</th>
+        <th>Descrição</th>
+        <th>Ações</th>
+        </tr>
+    </thead>
+<tbody>
+    {% for cat in categorias %}
+   <tr>
+   <td>{{ cat[0] }}</td>
+ <td>
+ <img src="{{ url_for('static', filename='uploads/categorias/' + (cat[4] if cat[4] else 'default.jpg')) }}" 
+      alt="Miniatura" class="adm-img-thumb">
+  </td>
+  <td><strong>{{ cat[1] }}</strong></td>
+ <td>
+  {% if cat[3] %}
+ <span class="adm-badge adm-badge-filha">Filha (Pai ID: {{ cat[3] }})</span>
+   {% else %}
+ <span class="adm-badge adm-badge-pai">Principal (Pai)</span>
+  {% endif %}
+   </td>
+    <td>{{ cat[2] or 'Sem descrição cadastrada' }}</td>
+ <td>
+ <button class="adm-btn adm-btn-edit adm-btn-sm" 
+    data-id="{{ cat[0] }}" data-nome="{{ cat[1] }}"  data-descricao="{{ cat[2] or '' }}" 
+    data-idpai="{{ cat[3] or '' }}" onclick="abrirModalFormulario('alterar', this)">
+    Editar
+</button>
+  <button class="adm-btn adm-btn-danger adm-btn-sm" data-id="{{ cat[0] }}" data-nome="{{ cat[1] }}"
+    onclick="abrirModalExclusao(this)">
+     Excluir
+</button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #7f8c8d;">Nenhuma categoria encontrada no banco de dados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Incluir/ Alterar-->
+    <div id="modalFormulario" class="adm-modal">
+        <div class="adm-modal-content">
+            <div class="adm-modal-title" id="tituloModal">Incluir Nova Categoria</div>
+            <form id="formCategoria" method="POST" enctype="multipart/form-data">
+                <input type="hidden" id="categoriaId" name="idCategoria">
+
+                <div class="adm-form-group">
+                    <label for="nome">Nome da Categoria:</label>
+                    <input type="text" id="nome" name="nome" class="adm-form-control" required>
+                </div>
+                <div class="adm-form-group" style="background: #f8f9fa; padding: 12px; border-radius: 6px;">
+                    <label style="font-weight: bold;">Configuração de Hierarquia:</label>
+                    <div style="margin-top: 6px; display: flex; gap: 20px;">
+                        <label style="cursor: pointer; font-weight: normal;">
+                            <input type="radio" id="tipo_pai" name="tipo_cat" value="pai" checked onclick="alternarCamposTipo()"> Categoria Principal
+                        </label>
+                        <label style="cursor: pointer; font-weight: normal;">
+                            <input type="radio" id="tipo_filha" name="tipo_cat" value="filha" onclick="alternarCamposTipo()"> Subcategoria (Filha)
+                        </label>
+                    </div>
+                </div>
+                <div class="adm-form-group" id="div_categoria_pai" style="display: none;">
+                    <label for="catPaiSelect" style="color: #2980b9;">Vincular à Categoria Pai:</label>
+                    <select id="catPaiSelect" name="idPai" class="adm-form-control">
+                        <option value="">-- Escolha a Categoria Pai --</option>
+                        {% for cat in categorias %}
+                            {% if not cat[3] %}
+                                <option value="{{ cat[0] }}">{{ cat[1] }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="adm-form-group">
+                    <label for="descricao">Descrição:</label>
+                    <textarea id="descricao" name="descricao" class="adm-form-control" rows="3"></textarea>
+                </div>
+                <div class="adm-form-group" id="div_upload_imagem">
+                    <label for="imagem">Imagem da Categoria:</label>
+                    <input type="file" id="imagem" name="imagem" class="adm-form-control" accept="image/*">
+                    <small style="color: #7f8c8d; font-size: 11px; display: block; margin-top: 4px;">
+                        Deixe vazio se preferir usar a imagem padrão (`default.jpg`).
+                    </small>
+                </div>
+                <div class="adm-modal-footer">
+                    <button type="button" class="adm-btn adm-btn-cancel" onclick="fecharModal('modalFormulario')">Cancelar</button>
+                    <button type="submit" id="btnSalvar" class="adm-btn adm-btn-add">Cadastrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalExclusao" class="adm-modal">
+        <div class="adm-modal-content">
+            <div class="adm-modal-title" style="color: #c0392b;">Confirmar Exclusão</div>
+            <p style="margin-bottom: 15px; line-height: 1.5;">Você tem certeza que deseja excluir permanentemente a categoria <strong id="nomeCategoriaExcluir"></strong>?</p>
+            <p style="font-size: 13px; color: #7f8c8d;">ID do Registro: <span id="idCategoriaExcluir"></span></p>
+            
+            <div class="adm-modal-footer">
+                <button type="button" class="adm-btn adm-btn-cancel" onclick="fecharModal('modalExclusao')">Cancelar</button>
+                <button type="button" class="adm-btn adm-btn-danger" onclick="confirmarExclusao()">Excluir</button>
+            </div>
+        </div>
+    </div>
+   <script>
+        function alternarCamposTipo() {
+            const radioFilha = document.getElementById('tipo_filha');
+            const divPai     = document.getElementById('div_categoria_pai');
+            const selectPai  = document.getElementById('catPaiSelect');
+            if (radioFilha.checked) {
+                divPai.style.display = 'block';
+                selectPai.required   = true;
+            } else {
+                divPai.style.display = 'none';
+                selectPai.value      = '';
+                selectPai.required   = false;
+            }
+        }
+        function abrirModalFormulario(acao, btn = null) {
+            const modal= document.getElementById('modalFormulario');
+            const form= document.getElementById('formCategoria');
+            const titulo = document.getElementById('tituloModal');
+            const btnSalvar = document.getElementById('btnSalvar');
+            const divImagem = document.getElementById('div_upload_imagem');
+            const id = btn ? btn.dataset.id        : '';
+            const nome = btn ? btn.dataset.nome      : '';
+            const idPai= btn ? btn.dataset.idpai     : '';
+            const descricao = btn ? btn.dataset.descricao : '';
+            document.getElementById('categoriaId').value = id;
+            document.getElementById('nome').value = nome;
+            document.getElementById('descricao').value = descricao;
+            document.getElementById('imagem').value = '';
+            if (idPai) {
+                document.getElementById('tipo_filha').checked = true;
+                document.getElementById('catPaiSelect').value = idPai;
+            } else {
+                document.getElementById('tipo_pai').checked = true;
+                document.getElementById('catPaiSelect').value = '';
+            }
+            alternarCamposTipo();
+            if (acao === 'incluir') {
+                titulo.innerText = 'Incluir Nova Categoria';
+                btnSalvar.innerText = 'Cadastrar';
+                btnSalvar.className = 'adm-btn adm-btn-add';
+                form.action = '/admin/categorias/cadastrar';
+                form.setAttribute('enctype', 'multipart/form-data');
+                divImagem.style.display = 'block';
+            } else {
+                titulo.innerText    = `Alterar Categoria (ID: ${id})`;
+                btnSalvar.innerText = 'Salvar Alterações';
+                btnSalvar.className = 'adm-btn adm-btn-edit';
+                form.action = '/admin/categorias/editar';
+                form.removeAttribute('enctype');
+                divImagem.style.display = 'none';
+            }
+            modal.style.display = 'flex';
+        }
+
+        function abrirModalExclusao(btn) {
+            document.getElementById('idCategoriaExcluir').innerText   = btn.dataset.id;
+            document.getElementById('nomeCategoriaExcluir').innerText = btn.dataset.nome;
+            document.getElementById('modalExclusao').style.display    = 'flex';
+        }
+        function confirmarExclusao() {
+            const id = document.getElementById('idCategoriaExcluir').innerText;
+            window.location.href = '/admin/categorias/excluir/' + id;
+        }
+
+        function fecharModal(idModal) {
+            document.getElementById(idModal).style.display = 'none';
+        }
+        window.onclick = function (event) {
+            if (event.target.classList.contains('adm-modal')) {
+                event.target.style.display = 'none';
+            }
+        };
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.adm-modal').forEach(m => m.style.display = 'none');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Central</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="main-header">
+    <div class="logo">
+        <h1>Projeto Categorias</h1>
+    </div>
+        
+    <div class="search-container">
+        <form action="/categorias/buscar" method="GET">
+            <input type="text" name="q" placeholder="Buscar categorias...">
+            <button type="submit">🔍</button>
+        </form>
+    </div>
+        
+    <nav>
+            <ul style="display: flex; list-style: none; gap: 20px; align-items: center; margin: 0; padding: 0;">
+                <li><a href="/" style="text-decoration: none; color: white; font-weight: 500;">Home</a></li>
+                <li><a href="/admin/categorias" class="btn-admin">Painel Admin</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Barra com os links -->
+    <nav class="subheader">
+        <ul class="category-list">
+            {% for cat in todas_categorias %}
+                {% if not cat[3] %}
+                <li>
+                    <a href="/categorias/buscar?q={{ cat[1] | urlencode }}">{{ cat[1] }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            <li class="all-categories">
+                <a href="#" onclick="toggleSidebar(event)" style="color: var(--primary-color);">Exibir Categorias ☰</a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Carrosel com as categorias -->
+   <main class="carousel-section">
+        <h2>Explore nossas Categorias</h2>
+        <div class="carousel-container">
+            <button class="nav-btn prev-btn" onclick="moveCarousel(-1)">❮</button>        
+            <div class="carousel-track-wrapper" id="carouselWrapper">
+                <div class="carousel-track">
+                    {% for cat in todas_categorias %}
+                        {% if not cat[3] %}
+                        <article class="card-categoria">
+                            
+                            <div class="product-image-container" style="height: 160px; flex-shrink: 0; overflow: hidden; background-color: #eee;">
+                                <img src="{{ url_for('static', filename='uploads/categorias/' + (cat[4] if cat[4] else 'default.jpg')) }}" 
+                                     alt="{{ cat[1] }}"
+                                     style="width: 100%; height: 100%; object-fit: cover;"
+                                     onerror="this.onerror=null; this.src='{{ url_for('static', filename='uploads/categorias/default.jpg') }}';">
+                            </div>
+                            
+                            <div class="product-info" style="flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
+                                <div>
+                                    <span class="badge-pai"></span>
+                                    <h4 style="margin-top: 5px;">{{ cat[1] }}</h4>
+                                    <p class="descricao">
+                                        {{ cat[2] if cat[2] else 'Explore os produtos disponíveis nesta categoria.' }}
+                                    </p>
+                                </div>
+                                
+                                <a href="/categorias/buscar?q={{ cat[1] | urlencode }}" class="btn-acessar">
+                                    Acessar Categoria
+                                </a>
+                            </div>
+                        </article>
+                        {% endif %}
+                    {% else %}
+                        <div style="padding: 60px 20px; text-align: center; color: #7f8c8d; width: 100%;">
+                            <p style="font-size: 16px;">Nenhuma categoria cadastrada no momento.</p>
+                        </div>
+                    {% endfor %}          
+                </div>
+            </div>
+            <button class="nav-btn next-btn" onclick="moveCarousel(1)">❯</button>
+        </div>
+    </main>
+    <!-- Barra lateral com as categorias -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar(event)"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3 style="color: var(--text-color); margin: 0;">Categorias</h3>
+            <button onclick="toggleSidebar(event)" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">✕</button>
+        </div>
+        <ul class="sidebar-menu">
+            {% for cat in todas_categorias %}
+            <li>
+                <a href="/categorias/buscar?q={{ cat[1] | urlencode }}">
+                    {% if cat[3] %} &nbsp;&nbsp;↳ {% else %} 📂 {% endif %} {{ cat[1] }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </aside>
+    <!-- ROdapé -->
+    <footer style="margin-top: 80px; background-color: var(--card-bg); border-top: 1px solid #e9ecef; text-align: center; padding: 25px 0; color: #666; font-size: 14px;">
+        <p>&copy; 2026 Tolizzo. Todos os direitos reservados.</p>
+    </footer>
+    <script>
+        function toggleSidebar(event) {
+            if(event) event.preventDefault();
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+        // Destinado ao carrossel
+        function moveCarousel(direction) {
+            const wrapper = document.getElementById('carouselWrapper');
+            const scrollAmount = 290 * direction; 
+            wrapper.scrollBy({
+                left: scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    </script>
+</body>
+</html>

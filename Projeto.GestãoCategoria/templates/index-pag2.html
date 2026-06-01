@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página categorias</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/style-pag2.css')}}">
+</head>
+<body>
+<header class="main-header">
+<div class="logo">
+    <h1>Projeto Categorias</h1>
+</div>
+<div class="search-container">
+    <form action="/categorias/buscar" method="GET">
+    <input type="text" name="q" id="search-input"
+           placeholder="Buscar categorias..."
+           value="{{ termo_busca if termo_busca else '' }}">
+    <button type="submit">🔍</button>
+</form>
+</div>
+<nav>
+    <ul style="display:flex; list-style:none; gap:20px; align-items:center;">
+        <li><a href="/" style="text-decoration:none; color:white; font-weight:500;">Home</a></li>
+        <li><a href="/admin/categorias" class="btn-admin">⚙ Painel Admin</a></li>
+    </ul>
+</nav>
+</header>
+ 
+<!-- categorias principais do banco -->
+<nav class="subheader">
+<ul class="category-list">
+ {% for cat in todas_categorias %}
+   {% if not cat[3] %}
+   <li>
+       <a href="/categorias/buscar?q={{ cat[1] | urlencode }}">{{ cat[1] }}</a>
+   </li>
+   {% endif %}
+ {% endfor %}
+    <li class="all-categories">
+        <a href="#" onclick="toggleSidebar(event)">Exibir Categorias ☰</a>
+    </li>
+</ul>
+</nav>
+ 
+<!--MOstrar a barra lateral e a exibição dos resultados -->
+<div class="page-container">
+    <!-- Barra Lateral para filtragem -->
+<aside class="filter-sidebar">
+<form action="/categorias/buscar" method="GET">
+<!-- Preserva o termo da busca ao aplicar filtro -->
+<input type="hidden" name="q" value="{{ termo_busca if termo_busca else '' }}">
+<div class="filter-group">
+  <h3>Filtrar Resultados</h3>
+  <ul>
+    <!--"Apenas Principais": mostra o pai da subcategoria pesquisada.
+        Ex: buscar "mochila de estudante" -> retorna "Escolar"-->
+    <li>
+        <label>
+            <input type="radio" name="tipo" value="principais"
+                   {% if tipo_filtro = 'principais' %}checked{% endif %}>
+            Apenas Principais
+        </label>
+    </li>
+    <!-- "Subcategorias": mostra filhas do pai pesquisado.
+        Ex: explorar "Escolar" retorna "Mochila", "Caderno", etc.-->
+    <li>
+<label>
+<input type="radio" name="tipo" value="sub"
+ {% if tipo_filtro == 'sub' %}checked{% endif %}>
+ Subcategorias
+</label>
+  </li>
+ </ul>
+ </div>
+ 
+<!-- Exiba subcategorias relacionadas -->
+{% if subcategorias_filtro %}
+<div class="filter-group">
+  <h4>Subcategorias de <strong>{{ subcategorias_filtro[0][5] }}</strong></h4>
+  <ul>
+    {% set ns = namespace(pai_atual='') %}
+    {% for sub in subcategorias_filtro %}
+        {% if sub[5] != ns.pai_atual %}
+            {% set ns.pai_atual = sub[5] %}
+            {% if not loop.first %}
+                <li class="filter-group-label">📂 {{ sub[5] }}</li>
+            {% endif %}
+        {% endif %}
+        <li>
+            <label>
+                <input type="checkbox"
+                       onchange="window.location.href='/categorias/buscar?q={{ sub[1] | urlencode }}&tipo=sub'">
+                ↳ {{ sub[1] }}
+            </label>
+        </li>
+    {% endfor %}
+    </ul>
+    </div>
+{% endif %}
+    <button type="submit" class="btn-filter">Aplicar Filtros</button>
+</form>
+</aside>
+
+<!-- Exibição de Resultados-->
+<section class="product-grid">
+<div class="results-header">
+    <h2>
+     Resultados para:
+     <span>"{{ termo_busca if termo_busca else 'Todas as Categorias' }}"</span>
+    </h2>
+    <p>{{ resultados | length }} registro(s) encontrado(s)</p>
+</div>
+{% for cat in resultados %}
+<article class="product-card">
+  <div class="product-placeholder">
+      {% if cat[4] and cat[4] != 'default.jpg' %}
+          <img src="{{ url_for('static', filename='uploads/categorias/' + cat[4]) }}"
+               alt="{{ cat[1] }}" style="width:100%; height:100%; object-fit:cover;">
+      {% else %}
+          {{ cat[1][:1] | upper }}
+      {% endif %}
+  </div>
+  <div class="product-info">
+      {% if cat[3] %}
+          <span class="badge-sub">Subcategoria</span>
+      {% else %}
+          <span class="badge-pai">Categoria Raiz</span>
+      {% endif %}
+      <h4>{{ cat[1] }}</h4>
+      <p class="descricao">
+          {{ cat[2] if cat[2] else 'Sem descrição informada.' }}
+      </p>
+      <!--
+          Link destinado a buscaa de subcategorias de uma categoria:
+          clicando em "Ver Itens" filtra pelo nome da categoria.
+      -->
+      <a href="/categorias/buscar?q={{ cat[1] | urlencode }}"
+         class="btn-buy">Ver Itens</a>
+</div>
+</article>
+    {% else %}
+    <div class="no-results">
+        <p>😕 Nenhuma categoria encontrada para
+           "<strong>{{ termo_busca }}</strong>".</p>
+        <a href="/" class="btn-voltar">← Voltar para a Home</a>
+    </div>
+    {% endfor %}
+</section>
+</div>
+
+<!-- Barra Lateral -->
+ <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar(event)"></div>
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h3>Categorias</h3>
+        <button onclick="toggleSidebar(event)"
+                style="background:none; border:none; font-size:20px; cursor:pointer;">✕</button>
+    </div>
+    <ul class="sidebar-menu">
+        {% for cat in todas_categorias %}
+        <li>
+            <a href="/categorias/buscar?q={{ cat[1] | urlencode }}">
+                {% if cat[3] %}&nbsp;&nbsp;↳{% else %}📂{% endif %} {{ cat[1] }}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</aside>
+<footer style="margin-top:50px; background:#f8f9fa; border-top:1px solid #e9ecef;
+text-align:center; padding:25px 0; color:#666; font-size:14px;">
+<p>&copy; 2026 Projeto Categoria. Todos os direitos reservados.</p>
+</footer>
+<script>
+function toggleSidebar(event) {
+    if (event) event.preventDefault();
+    document.getElementById('sidebar').classList.toggle('active');
+    document.getElementById('sidebar-overlay').classList.toggle('active');
+}
+</script>
+</body>
+</html>
