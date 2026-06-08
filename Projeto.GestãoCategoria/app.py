@@ -10,8 +10,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # CONFIGURAÇÃO DO BANCO DE DADOS
 DB_CONFIG = {
-    "host":     "localhost",
-    "user":     "root",
+    "host":"localhost",
+    "user":"root",
     "password": "",
     "database": "GestaoCategoria"
 }
@@ -58,7 +58,7 @@ def buscar_categoria():
     tipo  = request.args.get('tipo', 'todas')
 
     conexao = conectar_BD()
-    cursor  = conexao.cursor()
+    cursor = conexao.cursor()
 
     # LÓGICA DE RESULTADOS POR TIPO DE FILTRO
     if tipo == 'principais':
