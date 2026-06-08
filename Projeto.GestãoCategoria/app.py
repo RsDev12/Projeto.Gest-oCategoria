@@ -18,8 +18,8 @@ DB_CONFIG = {
 
 def conectar_BD():
     return pymysql.connect(
-        host     = DB_CONFIG['host'],
-        user     = DB_CONFIG['user'],
+        host = DB_CONFIG['host'],
+        user = DB_CONFIG['user'],
         password = DB_CONFIG['password'],
         database = DB_CONFIG['database'],
         cursorclass = pymysql.cursors.Cursor  # retorna tuplas como antes
@@ -42,7 +42,7 @@ def buscar_todas_categorias():
 @app.route('/')
 def index():
     conexao = conectar_BD()
-    cursor  = conexao.cursor()
+    cursor = conexao.cursor()
     cursor.execute(
         "SELECT idCategoria, nome, descricao,idCategoria_pai, imagem FROM Categoria"
     )
@@ -55,7 +55,7 @@ def index():
 @app.route('/categorias/buscar')
 def buscar_categoria():
     termo = request.args.get('q', '').strip()
-    tipo  = request.args.get('tipo', 'todas')
+    tipo = request.args.get('tipo', 'todas')
 
     conexao = conectar_BD()
     cursor = conexao.cursor()
